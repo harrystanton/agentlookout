@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Launch agents that won't be deleted
+ALLOWED_LAUNCH_AGENTS=("com.dropbox.DropboxMacUpdate.agent.plist" "com.tapbots.Pastebot.PasteService.plist")
+delete=()
+
+shopt -s nullglob
+
+launch_agent_check() {
+  for f in $1; do
+    filename=$(basename "$f")
+    if [[ ! " ${ALLOWED_LAUNCH_AGENTS[@]} " =~ " ${filename} " ]]; then
+      delete+=("$f")
+    fi
+
+  done
+}
+
+launch_agent_check "/Library/LaunchAgents/*.plist"
+launch_agent_check "/Library/LaunchDaemons/*.plist"
+launch_agent_check "~/Library/LaunchAgents/*.plist"
+
+if [ -z "${delete[@]}" ]; then
+  echo "No launch agents found, exiting..."
+  exit 0
+fi
+
+echo "Will delete unrecognized launch agents:"
+for f in ${delete[@]}; do
+  echo "  - $f"
+done
+
+delete_agents() {
+  sudo rm "${delete[@]}"
+}
+
+while true; do
+  read -p "Delete? [y/n] " yn
+  case $yn in
+    [Yy]* ) delete_agents; break;;
+    [Nn]* ) exit;;
+    * ) echo "Please answer yes/no";;
+esac
+done
