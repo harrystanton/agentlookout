@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Launch agents that won't be deleted
-ALLOWED_LAUNCH_AGENTS=("com.dropbox.DropboxMacUpdate.agent.plist" "com.tapbots.Pastebot.PasteService.plist")
+ALLOWED_LAUNCH_AGENTS=("com.dropbox.DropboxMacUpdate.agent.plist" "com.tapbots.Pastebot.PasteService.plist" "at.obdev.littlesnitch.agent.plist" "at.obdev.littlesnitch.daemon.plist")
 delete=()
 
 shopt -s nullglob
@@ -20,7 +20,7 @@ launch_agent_check "/Library/LaunchAgents/*.plist"
 launch_agent_check "/Library/LaunchDaemons/*.plist"
 launch_agent_check "~/Library/LaunchAgents/*.plist"
 
-if [ -z "${delete[@]}" ]; then
+if [ "${#delete[@]}" -eq 0 ]; then
   echo "No launch agents found, exiting..."
   exit 0
 fi
