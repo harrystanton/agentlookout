@@ -2,11 +2,8 @@
 
 # Launch agents that won't be deleted
 ALLOWED_LAUNCH_AGENTS=( \
-"com.tapbots.Pastebot.PasteService.plist" \
-"com.microsoft.update.agent.plist" \
-"com.microsoft.autoupdate.helper.plist" \
-"org.wireshark.ChmodBPF.plist" \
-"homebrew.mxcl.httpd.plist" \
+"at.obdev.littlesnitch.agent.plist" \
+"at.obdev.littlesnitch.daemon.plist" \
 )
 
 delete=()
