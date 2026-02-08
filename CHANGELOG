@@ -1,0 +1,22 @@
+0.2.0 - 2026-02-08
+
+* New safer deletion behaviour, launch agents in the home directory
+  are moved to the user's Trash whereas launch agents in the /Library
+  folder are moved to the current working directory. '-d' argument
+  can be used to override this behaviour and hard delete.
+* Elevated permissions are only used when needed, no longer used on
+  launch agents in the user's own Library folder.
+* Launch agents to be deleted are printed with less formatting for
+  easier scripting.
+* New '-y' argument bypasses yes/no confirmation and produces less
+  output, intended for cron jobs.
+* New '-v' verbose argument prints more details to the terminal.
+* New '-u' argument will search for launch agents only in the user's
+  own Library folder.
+* Makefile now uses 'install' command instead of 'mv' and 'chmod'
+  combo.
+
+0.1.0 - 2020-08-19
+
+* Initial version with exclusion and confirmation before deletion.
+* Makefile for install and uninstall included.

@@ -1,0 +1,73 @@
+agentlookout
+
+  Remove unwanted macOS launch agents.
+
+    $ agentlookout
+    /Library/LaunchAgents/com.adobe.AdobeCreativeCloud.plist
+    /Library/LaunchDaemons/com.adobe.acc.installer.v2.plist
+    Delete the listed launch agents? [y/n]
+
+  Unless overridden, confirmation is required before deleting launch
+  agents. Exceptions can be made by editing the list at the top of
+  this script file. Deleted launch agents within the user's Library
+  folder are moved to the Trash, ones in the root Library folder
+  require elevated permissions and are moved to the working directory.
+
+  Launch agents can be excluded from deletion by editing the
+  configuration header of the script. Arguments are available to
+  override default deletion and confirmation behaviour:
+
+    Flag  Description
+
+    -d    Hard delete, do not move to Trash
+    -h    Display help
+    -u    Only search in the user Library folder
+    -v    Print verbose messages 
+    -y    Accept deletion, do not prompt for confirmation"
+
+  https://yarrie.net/agentlookout
+
+Installation
+
+  Run 'make install' to install the shell script to /usr/local/bin.
+  The script can be uninstalled by running 'make uninstall'.
+
+Technical Details
+
+  Launch agents are programs which automatically start on macOS, they
+  can be viewed and disabled in System Settings (on macOS 13 Ventura
+  and higher) but cannot be deleted. Applications are able to add
+  launch agents at will, commonly auto updaters or network related
+  daemons. Note that these differ from "Login Items" which are
+  usually for user-facing applications.
+
+  The script looks in the following directories for launch agent plist
+  files (unless overridden with -u):
+
+    * /Library/LaunchAgents/
+    * /Library/LaunchDaemons/
+    * ~/Library/LaunchAgents/
+
+App Specific Notes
+
+  - com.microsoft.update.agent.plist: the Microsoft update agent
+    (an awful updater supporting an awful suite of applications) is
+    passive aggressive in its mission to run whenever possible and
+    will claim its installation is broken if you delete its launch
+    agent. It may surprise you to learn that this is a problem as it
+    makes the Office apps a little less useable as the dialog appears
+    anytime you open an app in the suite. I have not tested this
+    solution, but as macOS 13 lets you disable launch agents perhaps
+    disabling it in System Settings instead of deleting it might work
+    better.
+
+License
+
+  This program is licensed under CC0-1.0, marked as dedicated to the 
+  public domain, see LICENSE file.
+
+Contributing
+
+  Please email any feedback or patches to harry@harrystanton.com, I
+  cherish all correspondence.
+

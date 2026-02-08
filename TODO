@@ -1,0 +1,10 @@
+* Support for Login Items, /Library/StartupItems and
+  LoginHooks, see https://apple.stackexchange.com/a/451942
+  [2026-02-08].
+* Use an actual configuration file in /usr/local/etc or
+  /opt/etc (is that correct for Apple Silicon?) [2026-02-08].
+* Move to zsh or sh, the latter for retaining compatibility
+  with older Macs [2026-02-08].
+* Is using the Trash in the one edge case where a launch agent
+  is within the user's Library folder a little confusing? 
+  [2026-02-08]

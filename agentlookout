@@ -1,48 +1,159 @@
 #!/bin/bash
 
-# Launch agents that won't be deleted
+# --- CONFIGURATION ---
+
+# Allowed launch agents not to be deleted. Use only the filename,
+# not the full path. Each entry should be wrapped in double quotes
+# and separated by a space (optionally followed by a \ character
+# for new lines).
+#
+# Example:
+#   ALLOWED_LAUNCH_AGENTS=( \
+#     "net.mullvad.daemon.plist" \
+#     "com.microsoft.update.agent.plist"
+#   )
 ALLOWED_LAUNCH_AGENTS=( \
-"at.obdev.littlesnitch.agent.plist" \
-"at.obdev.littlesnitch.daemon.plist" \
+"net.mullvad.daemon.plist" \
+"com.microsoft.update.agent.plist"
 )
 
-delete=()
+# --- START OF SCRIPT - DO NOT EDIT ---
 
 shopt -s nullglob
 
-launch_agent_check() {
-  for f in $1; do
-    filename=$(basename "$f")
-    if [[ ! " ${ALLOWED_LAUNCH_AGENTS[@]} " =~ " ${filename} " ]]; then
-      delete+=("$f")
-    fi
+# display verbose messages
+verbose_flag=0
+# do not prompt the user to confirm deletion
+yes_flag=0
+# hard delete, do not move to trash or pwd
+delete_flag=0
+# only search for launch agents in the user's own library folder
+local_library_only_flag=0
 
-  done
+# parse flags
+print_usage() {
+echo "\
+agentlookout [-hdvy]
+Remove unwanted macOS launch agents.
+
+Unless overridden, confirmation is required before deleting launch
+agents. Exceptions can be made by editing the list at the top of
+this script file. Deleted launch agents within the user's Library
+folder are moved to the Trash, ones in the root Library folder
+require elevated permissions and are moved to the working directory.
+
+    -d    Hard delete, do not move to Trash
+    -h    Display help
+    -u    Only search in the user Library folder
+    -v    Print verbose messages 
+    -y    Accept deletion, do not prompt for confirmation"
 }
 
-launch_agent_check "/Library/LaunchAgents/*.plist"
-launch_agent_check "/Library/LaunchDaemons/*.plist"
+while getopts 'dhuvy' flag; do
+    case "${flag}" in
+        d) delete_flag=1 ;;
+        h) print_usage
+           exit 0 ;;
+        u) local_library_only_flag=1 ;;
+        v) verbose_flag=1 ;;
+        y) yes_flag=1 ;;
+        *) print_usage
+           exit 1 ;;
+    esac
+done
+
+# functions
+
+echo_verbose() {
+    if [ "${verbose_flag}" -eq 1 ]; then
+        echo "[verbose] $1"
+    fi
+}
+
+trash_enabled=0
+if command -v trash > /dev/null 2>&1; then
+    echo_verbose "trash command is available"
+    trash_enabled=1
+else
+    echo_verbose "trash command is unavailable, will use mv to pwd"
+fi
+
+delete=()
+
+launch_agent_check() {
+    echo_verbose "checking '$1' for files"
+    for f in $1; do
+        filename=$(basename "$f")
+        if [[ ! " ${ALLOWED_LAUNCH_AGENTS[@]} " =~ " ${filename} " ]]; then
+            echo_verbose "adding '$f' to deletion list"
+            delete+=("$f")
+        else
+            echo_verbose "skipping '$f' as in allowed list"
+        fi
+    done
+}
+
+delete_agents() {
+    for f in ${delete[@]}; do
+        if [ "${delete_flag}" -eq 1 ]; then
+            # hard delete is enabled
+            if [[ "$f" == $HOME* ]]; then
+                # is a user launch agent
+                echo_verbose "hard deleting the following user agent: $f"
+                rm "$f"
+            else
+                echo_verbose "(sudo) hard deleting the following user agent: $f"
+                sudo rm "$f"
+            fi
+        else
+            # soft delete (trash or move)
+            
+            # if the file is in the local home directory then
+            # can trash, otherwise must move to local PWD
+            if [[ "$f" == $HOME* ]]; then
+                # is a user launch agent
+                if [ "$trash_enabled" -eq 1 ]; then
+                    echo_verbose "trashing the following user agent: $f"
+                    trash "$f"
+                else
+                    echo_verbose "moving the following user agent to pwd: $f -> $PWD"
+                    mv "$f" "$PWD"
+                fi
+            else
+                echo_verbose "(sudo) moving the following user agent to pwd: $f -> $PWD"
+                sudo mv "$f" "$PWD"
+            fi
+        fi
+    done
+}
+
+if ! [ "$local_library_only_flag" -eq 1 ]; then
+    launch_agent_check "/Library/LaunchAgents/*.plist"
+    launch_agent_check "/Library/LaunchDaemons/*.plist"
+fi
 launch_agent_check "$HOME/Library/LaunchAgents/*.plist"
 
 if [ "${#delete[@]}" -eq 0 ]; then
-  echo "No launch agents found, exiting..."
-  exit 0
+    echo_verbose "no launch agents found, existing"
+    if ! [ "${yes_flag}" -eq 1 ]; then
+        echo "No launch agents found, exiting..."
+    fi
+    exit 0
 fi
 
-echo "Will delete unrecognized launch agents:"
 for f in ${delete[@]}; do
-  echo "  - $f"
+  echo "$f"
 done
-
-delete_agents() {
-  sudo rm "${delete[@]}"
-}
-
-while true; do
-  read -p "Delete? [y/n] " yn
-  case $yn in
-    [Yy]* ) delete_agents; break;;
-    [Nn]* ) exit;;
-    * ) echo "Please answer yes/no";;
-esac
-done
+    
+if [ "${yes_flag}" -eq 1 ]; then
+    delete_agents
+else
+    while true; do
+        read -p "Delete the listed launch agents? [y/n] " yn
+        case $yn in
+        [Yy]* ) delete_agents; break;;
+        [Nn]* ) echo "Aborting, no changes were made..."; exit;;
+            * ) echo "Please answer yes/no";;
+        esac
+    done
+fi
